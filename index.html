@@ -55,66 +55,25 @@
         project-id="parent-geenee-dev-445110"
         agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
         language-code="en"
-        chat-title="Parent Genee"
-        chat-icon="https://storage.googleapis.com/pg_logo/parent_genee_logo1.png">
+        max-query-length="-1"
+        allow-feedback="all">
         <df-messenger-chat-bubble
-            chat-title="Parent Genee"
-            chat-icon="https://storage.googleapis.com/pg_logo/parent_genee_logo1.png">
+             chat-title="Parent Genee"
+             chat-icon="https://storage.googleapis.com/pg_logo/parent_genee_logo1.png">
         </df-messenger-chat-bubble>
     </df-messenger>
-    <script>
-        window.addEventListener('dfMessengerLoaded', function(event) {
-            const dfMessenger = document.querySelector('df-messenger');
-            const shadowRoot = dfMessenger.shadowRoot;
-
-            // Create a new <style> element
-            const style = document.createElement('style');
-            style.textContent = `
-                .df-titlebar {
-                    display: flex;
-                    align-items: center;
-                }
-                .df-title::before {
-                    content: '';
-                    display: inline-block;
-                    width: 30px;
-                    height: 30px;
-                    margin-right: 10px;
-                    background: url('https://storage.googleapis.com/pg_logo/parent_genee_logo1.png') no-repeat center center;
-                    background-size: contain;
-                }
-            `;
-            shadowRoot.appendChild(style);
-
-            const titleBar = shadowRoot.querySelector('.df-titlebar');
-            const title = titleBar.querySelector('.df-title');
-
-            // Create an img element for the logo
-            const logo = document.createElement('img');
-            logo.src = 'https://storage.googleapis.com/pg_logo/parent_genee_logo1.png';
-            logo.alt = 'Parent Genee Logo';
-            logo.style.width = '30px';
-            logo.style.height = '30px';
-            logo.style.marginRight = '10px';
-
-            // Insert the logo before the title text
-            if (title) {
-                title.insertBefore(logo, title.firstChild);
-            }
-        });
-    </script>
-    <style>
-        df-messenger {
-            z-index: 999;
-            position: fixed;
-            --df-messenger-font-color: #000;
-            --df-messenger-font-family: Arial;
-            --df-messenger-chat-background: #C6DAFC;
-            --df-messenger-message-user-background: #FFFFFF;
-            --df-messenger-message-bot-background: #fff;
-            bottom: 16px;
-            right: 16px;
-        }
-    </style>
+<style>
+  df-messenger {
+    z-index: 999;
+    position: fixed;
+    --df-messenger-font-color: #000;
+    --df-messenger-font-family: Arial;
+    --df-messenger-chat-background: #C6DAFC;
+    --df-messenger-message-user-background: #FFFFFF;
+    --df-messenger-message-bot-background: #fff;
+    bottom: 16px;
+    right: 16px;
+  }
+</style>
 </body>
 </html>
