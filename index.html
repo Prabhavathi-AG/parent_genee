@@ -15,6 +15,13 @@
             height: 100vh;
             background-color: #f4f4f4;
         }
+
+        /* Hide the chat bubble completely */
+        df-messenger {
+            z-index: 999;
+            position: fixed;
+            display: none;  /* Initially hide the chat bubble */
+        }
     </style>
 </head>
 <body>
@@ -23,6 +30,7 @@
     <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
     
     <df-messenger
+        id="chatbot"
         project-id="parent-geenee-dev-445110"
         agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
         language-code="en"
@@ -34,22 +42,34 @@
             user-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot_user.png"
             chat-title-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
             chat-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
-            allow-fullscreen="always">
+            allow-fullscreen="always"
+           >
         </df-messenger-chat-bubble>
+        
     </df-messenger>
 
-    <style>
-        df-messenger {
-            z-index: 999;
-            position: fixed;
-            --df-messenger-font-color: #315ac3;
-            --df-messenger-font-family: Arial;
-            --df-messenger-chat-background: #C6DAFC;
-            --df-messenger-message-user-background: #FFFFFF;
-            --df-messenger-message-bot-background: #fff;
-            bottom: 16px;
-            right: 16px;
-        }
-    </style>
+    <script>
+
+        const dfMessengerBubble = document.querySelector('df-messenger-chat-bubble');
+        dfMessengerBubble.openChat();
+        window.addEventListener("load", function () {
+            let chatBubble = document.querySelector("df-messenger");
+
+            // Ensure that chat window is displayed and opened immediately
+            if (chatBubble) {
+                // Show the chat window
+                chatBubble.style.display = "block";
+
+                // Access the shadow DOM and open the chat window
+                let chat = chatBubble.shadowRoot.querySelector("df-messenger-chat");
+
+                // Open the chat window immediately
+                chat.setAttribute("open", "");
+
+                // Hide the chat bubble icon completely (optional)
+                chatBubble.shadowRoot.querySelector("df-messenger-chat-bubble").style.display = "none";
+            }
+        });
+    </script>
 </body>
 </html>
