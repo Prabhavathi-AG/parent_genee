@@ -71,5 +71,31 @@
             }
         });
     </script>
+    <script>
+        // Function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+      
+        // Extract and decode email
+        let userEmail = getQueryParam("email");
+        if (userEmail) {
+            try {
+                userEmail = decodeURIComponent(atob(userEmail)); // Decode Base64
+            } catch (e) {
+                console.log("Email is not encoded, using as-is");
+            }
+        }
+      
+        console.log("Extracted User Email:", userEmail);
+      
+        // Pass the email to Dialogflow Messenger
+        window.addEventListener("dfMessengerLoaded", function (event) {
+            const dfMessenger = document.querySelector("df-messenger");
+            dfMessenger.setAttribute("user-id", userEmail); // Optional user ID
+            dfMessenger.setAttribute("session-params", JSON.stringify({ email: userEmail }));
+        });
+      </script>      
 </body>
 </html>
