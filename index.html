@@ -96,6 +96,61 @@
             dfMessenger.setAttribute("user-id", userEmail); // Optional user ID
             dfMessenger.setAttribute("session-params", JSON.stringify({ email: userEmail }));
         });
-      </script>      
+      </script>
+      <script>
+        // Initialize the Google API client
+        function initClient() {
+          gapi.client.init({
+            'apiKey': 'AIzaSyANFDksC_jLSqbQOrCpvA_gTeTDB9V4Yq0', 
+            'discoveryDocs': ['https://language.googleapis.com/$discovery/rest?version=v1'],
+          }).then(function () {
+            console.log('Google API client initialized');
+          });
+        }
+    
+        // Load the Google API client
+        gapi.load('client', initClient);
+    
+        // Function to analyze sentiment
+        async function analyzeSentiment(text) {
+          const response = await gapi.client.language.documents.analyzeSentiment({
+            document: {
+              content: text,
+              type: 'PLAIN_TEXT',
+            },
+          });
+          return response.result.documentSentiment;
+        }
+    
+        // Modify chatbot responses based on sentiment
+        function modifyResponse(sentiment, originalResponse) {
+          if (sentiment.score < -0.5) {
+            return `I'm sorry you're feeling frustrated. Let me help you with that. ${originalResponse}`;
+          } else if (sentiment.score > 0.5) {
+            return `Great! ${originalResponse}`;
+          } else {
+            return originalResponse;
+          }
+        }
+    
+        // Listen for chatbot responses
+        const dfMessenger = document.querySelector('df-messenger');
+        dfMessenger.addEventListener('df-response-received', async (event) => {
+          const userInput = event.detail.response.queryResult.queryText;
+          const originalResponse = event.detail.response.queryResult.fulfillmentText;
+    
+          // Analyze sentiment
+          const sentiment = await analyzeSentiment(userInput);
+          console.log('Sentiment Score:', sentiment.score);
+    
+          // Modify the response
+          const modifiedResponse = modifyResponse(sentiment, originalResponse);
+    
+          // Update the chatbot's response
+          dfMessenger.renderCustomText(modifiedResponse);
+        });
+      </script>
+    </body>
+    </html>      
 </body>
 </html>
