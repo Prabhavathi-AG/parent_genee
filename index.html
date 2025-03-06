@@ -16,11 +16,11 @@
             background-color: #f4f4f4;
         }
 
-        /* Hide the chat bubble completely */
         df-messenger {
             z-index: 999;
             position: fixed;
-            display: none;  /* Initially hide the chat bubble */
+            bottom: 20px;
+            right: 20px;
         }
     </style>
 </head>
@@ -42,32 +42,44 @@
             user-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot_user.png"
             chat-title-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
             chat-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
-            allow-fullscreen="always"
-           >
+            allow-fullscreen="always">
         </df-messenger-chat-bubble>
-        
     </df-messenger>
 
     <script>
+        // Function to extract the email from the URL
+        function getEmailFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('email'); // Returns the email value or null if not found
+        }
 
-        const dfMessengerBubble = document.querySelector('df-messenger-chat-bubble');
-        dfMessengerBubble.openChat();
+        // Function to pass the email to Dialogflow
+        function passEmailToDialogflow(email) {
+            const dfMessenger = document.querySelector("df-messenger");
+
+            if (dfMessenger) {
+                // Set the user email in Dialogflow
+                dfMessenger.setUser({
+                    email: email
+                });
+
+                // Optional: Open the chat window automatically
+                const chatBubble = dfMessenger.shadowRoot.querySelector("df-messenger-chat-bubble");
+                if (chatBubble) {
+                    chatBubble.dispatchEvent(new Event("click")); // Simulate a click to open the chat
+                }
+            }
+        }
+
+        // On page load, capture the email and pass it to Dialogflow
         window.addEventListener("load", function () {
-            let chatBubble = document.querySelector("df-messenger");
+            const email = getEmailFromURL(); // Extract email from URL
 
-            // Ensure that chat window is displayed and opened immediately
-            if (chatBubble) {
-                // Show the chat window
-                chatBubble.style.display = "block";
-
-                // Access the shadow DOM and open the chat window
-                let chat = chatBubble.shadowRoot.querySelector("df-messenger-chat");
-
-                // Open the chat window immediately
-                chat.setAttribute("open", "");
-
-                // Hide the chat bubble icon completely (optional)
-                chatBubble.shadowRoot.querySelector("df-messenger-chat-bubble").style.display = "none";
+            if (email) {
+                console.log("Captured email:", email); // Log the email for debugging
+                passEmailToDialogflow(email); // Pass the email to Dialogflow
+            } else {
+                console.log("No email found in the URL.");
             }
         });
     </script>
