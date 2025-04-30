@@ -13,14 +13,38 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f4f4f4;
+            background-color: #0a3195d2;
         }
 
         /* Hide the chat bubble completely */
         df-messenger {
             z-index: 999;
             position: fixed;
+            background-color: hwb(231 24% 11% / 0.866);
             display: none;  /* Initially hide the chat bubble */
+
+            --df-messenger-chat-background: hwb(231 24% 11% / 0.866);
+        }
+
+        @media (max-width: 600px) {
+            df-messenger {
+            /* sit flush to all edges */
+                bottom: 0 !important;
+                right: 0 !important;
+                left: 0 !important;
+                top: 0 !important;
+
+            /* fill device width/height */
+                width: 100vw !important;
+                height: 100vh !important;
+
+            /* remove the built-in offset/gap */
+                --df-messenger-chat-window-offset: 0px;
+
+            /* force the shadow chat window inside to stretch */
+                --df-messenger-chat-window-width: 100vw;
+                --df-messenger-chat-window-height: 100vh;
+            }
         }
     </style>
 </head>
@@ -38,6 +62,7 @@
         allow-feedback="all">
         <df-messenger-chat-bubble
             chat-title="Parent Geenee"
+            background-color: #74992e;
             bot-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot-agent.png"
             user-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot_user.png"
             chat-title-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
