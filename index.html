@@ -26,39 +26,29 @@
             --df-messenger-chat-background: hwb(231 24% 11% / 0.866);
         }
 
+        /*——————————————————————————————————————————————————————————
+            Mobile inset so arrow & content never clip
+        ——————————————————————————————————————————————————————————*/
         @media (max-width: 600px) {
-          df-messenger {
-            /* pin flush but inset by 8px on all sides */
-            top:  8px !important;
-            right: 8px !important;
-            bottom: 8px !important;
-            left:  8px !important;
+            df-messenger {
+             /* pin to bottom, but inset 16px from left & right */
+                bottom: 0 !important;
+                left: 16px !important;
+                right: 16px !important;
+    
+            /* full height minus bottom bar (if any) */
+                top: 0 !important;
+                height: 100vh !important;
+    
+            /* make sure padding is included in that sizing */
+                box-sizing: border-box;
+                padding: 0; /* you can add vertical padding here if you like */
+            }
 
-            width:  calc(100vw - 16px) !important;
-            height: calc(100vh - 16px) !important;
-            margin: 0 !important;
-
-            /* inside the pane, no extra “bubble gap” */
-            --df-messenger-chat-window-offset: 0px;
-            /* chat-window itself now fills the container (minus our 8px margin) */
-            --df-messenger-chat-window-width: 100%;
-            --df-messenger-chat-window-height: 100%;
-
-            /* keep your background/color var here unchanged */
-            /* --df-messenger-chat-background: … */
-          }
-
-              /* bump the input’s right padding so the arrow isn’t ever pushed off-screen */
-          df-messenger {
-            --df-messenger-input-inner-padding: 0px 64px 0px 0px;
-            /* you can tweak this number until the arrow sits nicely inside */
-         }
-
-              /* if your send-icon still hangs off, nudge it left: */
-          df-messenger {
-            --df-messenger-send-icon-offset-y: -8px; /* default is –4px; more negative → moves left */
-          }
+            /* keep your bubble hidden as before */
+   
         }
+
     </style>
 </head>
 <body>
