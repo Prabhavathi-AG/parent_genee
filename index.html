@@ -27,24 +27,37 @@
         }
 
         @media (max-width: 600px) {
-            df-messenger {
-            /* sit flush to all edges */
-                bottom: 0 !important;
-                right: 0 !important;
-                left: 0 !important;
-                top: 0 !important;
+          df-messenger {
+            /* pin flush but inset by 8px on all sides */
+            top:  8px !important;
+            right: 8px !important;
+            bottom: 8px !important;
+            left:  8px !important;
 
-            /* fill device width/height */
-                width: 100vw !important;
-                height: 100vh !important;
+            width:  calc(100vw - 16px) !important;
+            height: calc(100vh - 16px) !important;
+            margin: 0 !important;
 
-            /* remove the built-in offset/gap */
-                --df-messenger-chat-window-offset: 0px;
+            /* inside the pane, no extra “bubble gap” */
+            --df-messenger-chat-window-offset: 0px;
+            /* chat-window itself now fills the container (minus our 8px margin) */
+            --df-messenger-chat-window-width: 100%;
+            --df-messenger-chat-window-height: 100%;
 
-            /* force the shadow chat window inside to stretch */
-                --df-messenger-chat-window-width: 100vw;
-                --df-messenger-chat-window-height: 100vh;
-            }
+            /* keep your background/color var here unchanged */
+            /* --df-messenger-chat-background: … */
+          }
+
+              /* bump the input’s right padding so the arrow isn’t ever pushed off-screen */
+          df-messenger {
+            --df-messenger-input-inner-padding: 0px 64px 0px 0px;
+            /* you can tweak this number until the arrow sits nicely inside */
+         }
+
+              /* if your send-icon still hangs off, nudge it left: */
+          df-messenger {
+            --df-messenger-send-icon-offset-y: -8px; /* default is –4px; more negative → moves left */
+          }
         }
     </style>
 </head>
