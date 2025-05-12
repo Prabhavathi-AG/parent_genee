@@ -4,52 +4,49 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat with Parent Geenee</title>
-  <link rel="icon" href="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png" type="image/png">
+  <link rel="icon" href="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png">
 
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #0a3195d2;
+      margin:0; padding:0;
+      display:flex; justify-content:center; align-items:center;
+      height:100vh; background-color:#0a3195d2;
     }
     df-messenger {
-      z-index: 999;
-      position: fixed;
-      background-color: #a854ccc2;
-      display: none;  /* hide until we open it */
+      position:fixed; z-index:999;
+      background-color:#a854ccc2;
+      display:none;  /* hidden until we open it */
       --df-messenger-chat-background: #d080e8dd;
       --df-messenger-input-padding: 8px;
     }
-    @media (max-width: 991px) {
+    @media (max-width:991px){
       df-messenger {
-        --df-messenger-send-icon-offset-x: -12px;
-        --df-messenger-input-inner-padding: 0px 64px 0px 0px;
-        --df-messenger-input-padding: 12px 16px;
+        --df-messenger-send-icon-offset-x:-12px;
+        --df-messenger-input-inner-padding:0px 64px 0px 0px;
+        --df-messenger-input-padding:12px 16px;
       }
     }
   </style>
 
-  <!-- Dialogflow Messenger CSS & JS -->
-  <link rel="stylesheet"
-        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
+  <!-- Dialogflow Messenger -->
+  <link
+    rel="stylesheet"
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
-  <!-- Google API client loader (provides `gapi`) -->
+  <!-- Google API loader (provides `gapi`) -->
   <script src="https://apis.google.com/js/api.js"></script>
 
-  <!-- 1) Extract & decode the `email` URL param -->
+  <!-- 1) Grab & decode ?email= from the URL -->
   <script>
-    function getQueryParam(param) {
-      return new URLSearchParams(window.location.search).get(param);
+    function getQueryParam(name) {
+      return new URLSearchParams(location.search).get(name);
     }
     let userEmail = getQueryParam("email");
     if (userEmail) {
       try {
-        userEmail = decodeURIComponent(atob(userEmail)); // Base64 → string
+        userEmail = decodeURIComponent(atob(userEmail));
       } catch (e) {
         console.log("Email not Base64, using as-is");
       }
@@ -59,7 +56,15 @@
 </head>
 
 <body>
-  <!-- 2) Dialogflow Messenger element -->
+  <!-- 2) Health-check for GET / -->
+  <script>
+    // Inline Express-like healthcheck so browsing to "/" shows a friendly message
+    if (location.pathname === "/") {
+      document.write("<h1>✅ Webhook is live! No UI here—chat via the bot widget.</h1>");
+    }
+  </script>
+
+  <!-- 3) Your DF-Messenger tag -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
@@ -78,72 +83,65 @@
     </df-messenger-chat-bubble>
   </df-messenger>
 
-  <!-- 3) Auto‐open chat bubble on page load -->
+  <!-- All your scripts go at the very end of <body> -->
   <script>
+    // A) Auto-open the chat bubble on load
     window.addEventListener("load", () => {
-      const chatEl = document.querySelector("df-messenger");
-      if (!chatEl) return;
-      chatEl.style.display = "block";
-      const chat = chatEl.shadowRoot.querySelector("df-messenger-chat");
+      const el = document.querySelector("df-messenger");
+      if (!el) return;
+      el.style.display = "block";
+      const chat = el.shadowRoot.querySelector("df-messenger-chat");
       chat.setAttribute("open", "");
-      // optionally hide the floating icon:
-      chatEl.shadowRoot.querySelector("df-messenger-chat-bubble").style.display = "none";
+      el.shadowRoot.querySelector("df-messenger-chat-bubble").style.display = "none";
     });
-  </script>
 
-  <!-- 4) Push email into custom-data once df-messenger is ready -->
-  <script>
+    // B) Once df-messenger JS is ready...
     window.addEventListener("dfMessengerLoaded", () => {
       const df = document.querySelector("df-messenger");
-      if (!df || !userEmail) return;
-      df.setAttribute("user-id", userEmail);
-      df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-    });
-  </script>
+      if (!df) return;
 
-  <!-- 5) Sentiment analysis using gapi + modify responses -->
-  <script>
-    // Initialize the Google API client
-    function initClient() {
-      gapi.client.init({
-        apiKey: 'AIzaSyANFDksC_jLSqbQOrCpvA_gTeTDB9V4Yq0',
-        discoveryDocs: ['https://language.googleapis.com/$discovery/rest?version=v1']
-      }).then(() => {
-        console.log('Google API client initialized');
-      });
-    }
-    // Load the client after gapi script is ready
-    gapi.load('client', initClient);
-
-    // Analyze sentiment of user input
-    async function analyzeSentiment(text) {
-      const resp = await gapi.client.language.documents.analyzeSentiment({
-        document: { content: text, type: 'PLAIN_TEXT' }
-      });
-      return resp.result.documentSentiment;
-    }
-
-    // Prepend or append based on sentiment score
-    function modifyResponse(sentiment, original) {
-      if (sentiment.score < -0.5) {
-        return `I'm sorry you're feeling frustrated. ${original}`;
-      } else if (sentiment.score > 0.5) {
-        return `Great! ${original}`;
-      } else {
-        return original;
+      // 1) Push the email into custom-data
+      if (userEmail) {
+        df.setAttribute("user-id", userEmail);
+        df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
       }
-    }
 
-    // Hook into df-messenger’s response event
-    document
-      .querySelector('df-messenger')
-      .addEventListener('df-response-received', async evt => {
-        const userText = evt.detail.response.queryResult.queryText;
-        const original = evt.detail.response.queryResult.fulfillmentText;
-        const sentiment = await analyzeSentiment(userText);
-        const modified = modifyResponse(sentiment, original);
-        evt.target.renderCustomText(modified);
+      // 2) Initialize Google API client for sentiment
+      function initClient() {
+        gapi.client.init({
+          apiKey: "AIzaSyANFDksC_jLSqbQOrCpvA_gTeTDB9V4Yq0",
+          discoveryDocs: [
+            "https://language.googleapis.com/$discovery/rest?version=v1"
+          ]
+        }).then(() => console.log("Google API client initialized"));
+      }
+      gapi.load("client", initClient);
+
+      // 3) Hook the sentiment-analysis into each bot response
+      df.addEventListener("df-response-received", async (evt) => {
+        const detail = evt.detail?.response;
+        if (!detail?.queryResult) return;  // guard missing
+        const userText = detail.queryResult.queryText;
+        const original = detail.queryResult.fulfillmentText;
+
+        // call the Language API
+        const resp = await gapi.client.language.documents.analyzeSentiment({
+          document: { content: userText, type: "PLAIN_TEXT" }
+        });
+        const score = resp.result.documentSentiment.score;
+
+        // tweak the reply
+        let newText = original;
+        if (score < -0.5) {
+          newText = `I'm sorry you're feeling frustrated. ${original}`;
+        } else if (score > 0.5) {
+          newText = `Great! ${original}`;
+        }
+
+        // render it
+        df.renderCustomText(newText);
       });
+    });
   </script>
 </body>
 </html>
