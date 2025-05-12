@@ -72,4 +72,79 @@
       background-color="#74992e"
       bot-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot-agent.png"
       user-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot_user.png"
-      chat-title-icon="https://storage.googleapis.com/ui-images-p
+      chat-title-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
+      chat-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
+      allow-fullscreen="always">
+    </df-messenger-chat-bubble>
+  </df-messenger>
+
+  <!-- 2) Open the chat bubble on load, keep your existing logic -->
+  <script>
+    window.addEventListener("load", function () {
+      const chatBubble = document.querySelector("df-messenger");
+      if (chatBubble) {
+        chatBubble.style.display = "block"; // show it
+        const chat = chatBubble.shadowRoot.querySelector("df-messenger-chat");
+        chat.setAttribute("open", "");     // open it
+        // hide the floating icon if you like
+        chatBubble.shadowRoot
+          .querySelector("df-messenger-chat-bubble")
+          .style.display = "none";
+      }
+    });
+  </script>
+
+  <!-- 3) Swap session-params for custom-data -->
+  <script>
+    window.addEventListener("dfMessengerLoaded", () => {
+      const dfMessenger = document.querySelector("df-messenger");
+      // Optional: still set user-id if you use it for analytics
+      if (userEmail) {
+        dfMessenger.setAttribute("user-id", userEmail);
+        // 🔑 This is what sends it as payload.customData.email
+        dfMessenger.setAttribute(
+          "custom-data",
+          JSON.stringify({ email: userEmail })
+        );
+      }
+    });
+  </script>
+
+  <!-- 4) Your Google API client + sentiment analysis (unchanged) -->
+  <script>
+    function initClient() {
+      gapi.client.init({
+        apiKey: 'AIzaSyANFDksC_jLSqbQOrCpvA_gTeTDB9V4Yq0',
+        discoveryDocs: ['https://language.googleapis.com/$discovery/rest?version=v1']
+      }).then(() => console.log('Google API client initialized'));
+    }
+    gapi.load('client', initClient);
+
+    async function analyzeSentiment(text) {
+      const response = await gapi.client.language.documents.analyzeSentiment({
+        document: { content: text, type: 'PLAIN_TEXT' },
+      });
+      return response.result.documentSentiment;
+    }
+
+    function modifyResponse(sentiment, originalResponse) {
+      if (sentiment.score < -0.5) {
+        return `I'm sorry you're feeling frustrated. Let me help you with that. ${originalResponse}`;
+      } else if (sentiment.score > 0.5) {
+        return `Great! ${originalResponse}`;
+      } else {
+        return originalResponse;
+      }
+    }
+
+    const dfMessenger = document.querySelector('df-messenger');
+    dfMessenger.addEventListener('df-response-received', async (event) => {
+      const userInput = event.detail.response.queryResult.queryText;
+      const originalResponse = event.detail.response.queryResult.fulfillmentText;
+      const sentiment = await analyzeSentiment(userInput);
+      const modified = modifyResponse(sentiment, originalResponse);
+      dfMessenger.renderCustomText(modified);
+    });
+  </script>
+</body>
+</html>
