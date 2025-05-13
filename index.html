@@ -2,83 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Parent Geenee Auto-Welcome</title>
+  <title>Test DF-Messenger</title>
 
-  <!-- 1) Load the Dialogflow Messenger CSS & JS -->
+  <!-- Load the messenger library -->
   <link
     rel="stylesheet"
     href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
   />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
-
-  <style>
-    /* Keep the widget in the bottom right */
-    df-messenger {
-      position: fixed !important;
-      bottom: 0 !important;
-      right: 0 !important;
-      z-index: 999 !important;
-    }
-  </style>
 </head>
-
 <body>
-  <!-- 2) The widget placeholder -->
+  <!-- Barebones widget -->
   <df-messenger
-    id="chatbot"
+    id="bot"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
     language-code="en">
   </df-messenger>
 
-  <!-- 3) Setup script runs after everything is loaded -->
   <script>
-    window.onload = () => {
-      console.log("🔍 Setup running on window.onload");
+    console.log("🐣 Test script running");
+    const bot = document.getElementById("bot");
+    console.log("Element found?", !!bot);
 
-      // A) Grab & decode ?email=
-      const params = new URLSearchParams(location.search);
-      let userEmail = params.get("email") || "";
-      try { userEmail = atob(userEmail); }
-      catch { /* not base64 */ }
-      console.log("📧 Parsed email:", userEmail);
+    bot.addEventListener("df-messenger-loaded", () => {
+      console.log("✅ df-messenger-loaded fired!");
+      console.log("Shadow root present?", !!bot.shadowRoot);
+      console.log("Chat element:", bot.shadowRoot.querySelector("df-messenger-chat"));
+    });
 
-      // B) Poll for the messenger element + its shadowRoot
-      let attempts = 0;
-      const iv = setInterval(() => {
-        const host = document.querySelector("df-messenger");
-        const chat = host?.shadowRoot?.querySelector("df-messenger-chat");
-        attempts++;
-
-        if (chat) {
-          clearInterval(iv);
-          console.log(`✅ Messenger ready after ${attempts} checks`);
-
-          // 1) Inject custom-data
-          if (userEmail) {
-            host.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-            console.log("🔗 custom-data set →", { email: userEmail });
-          }
-
-          // 2) Open the chat (fires WELCOME)
-          chat.setAttribute("open", "");
-          console.log("🚀 Chat opened (WELCOME sent)");
-
-          // 3) Log outgoing & incoming
-          host.addEventListener("df-request-sent", ev => {
-            console.log("▶️ df-request-sent:", ev.detail.body);
-          });
-          host.addEventListener("df-response-received", ev => {
-            console.log("◀️ df-response-received:", ev.detail.response);
-          });
-        }
-
-        if (attempts > 50) {
-          clearInterval(iv);
-          console.error("❌ Messenger never became ready");
-        }
-      }, 100);
-    };
+    // Give it a few seconds
+    setTimeout(() => {
+      console.warn("⌛️ 5s passed, did you see the loaded event above?");
+    }, 5000);
   </script>
 </body>
 </html>
