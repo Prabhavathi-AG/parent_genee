@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Parent Geenee Chat Debug</title>
+  <title>Parent Geenee Debug Chat</title>
 
-  <!-- Dialogflow Messenger CSS & JS -->
+  <!-- 1) Dialogflow Messenger CSS & JS -->
   <link
     rel="stylesheet"
     href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
@@ -12,18 +12,17 @@
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    /* ensure the widget shows up */
+    /* Always show the widget in the corner */
     df-messenger {
-      position: fixed;
-      bottom: 0;
-      right: 0;
-      z-index: 999;
+      position: fixed !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      z-index: 999 !important;
     }
   </style>
 </head>
-
 <body>
-  <!-- 1) The bare chatbot -->
+  <!-- 2) The chatbot widget -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
@@ -31,19 +30,54 @@
     language-code="en">
   </df-messenger>
 
-  <!-- 2) Debug script -->
+  <!-- 3) Debug and email-injection script -->
   <script>
-    // Step 0: verify this script runs
+    // 3a) Step 0: Verify this script runs at all
     console.log("🔍 Debug script loaded");
 
-    // Step 1: listen for the DF messenger ready event
+    // 3b) Extract & decode the email param
+    function getQueryParam(n){ return new URLSearchParams(location.search).get(n) }
+    let userEmail = getQueryParam("email");
+    if (userEmail) {
+      try {
+        userEmail = decodeURIComponent(atob(userEmail));
+      } catch {
+        console.log("Email not Base64, using as-is");
+      }
+    }
+    console.log("📧 User email parsed as:", userEmail);
+
+    // 3c) Listen for the df-messenger-loaded event on document
     document.addEventListener("df-messenger-loaded", () => {
-      console.log("✅ df-messenger-loaded event fired");
+      console.log("✅ df-messenger-loaded fired");
+
+      // Find the messenger element
+      const df = document.querySelector("df-messenger");
+      if (!df) {
+        console.error("❌ <df-messenger> element not found");
+        return;
+      }
+
+      // 3d) Inject the email into custom-data
+      if (userEmail) {
+        console.log("🔗 Setting custom-data =", { email: userEmail });
+        df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
+      }
+
+      // 3e) Log every outgoing request
+      df.addEventListener("df-request-sent", evt => {
+        console.log("▶️ df-request-sent:", evt.detail.body);
+      });
+
+      // 3f) Log every incoming response
+      df.addEventListener("df-response-received", evt => {
+        console.log("◀️ df-response-received:", evt.detail.response);
+      });
     });
 
-    // Step 2: fallback after 5s if no event
+    // 3g) Fallback in case the event never fires
     setTimeout(() => {
-      console.log("⌛️ 5s elapsed; did you see the df-messenger-loaded log above?");
+      console.warn("⌛️ 5s passed and no df-messenger-loaded event?");
     }, 5000);
   </script>
 </body>
