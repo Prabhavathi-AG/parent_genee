@@ -4,13 +4,15 @@
   <meta charset="utf-8"/>
   <title>Parent Geenee Auto-Welcome</title>
 
-  <!-- 1) Load the Messenger first -->
-  <link 
+  <!-- 1) Load the Dialogflow Messenger CSS & JS BEFORE the element -->
+  <link
     rel="stylesheet"
-    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
+    /* Always keep the widget visible in the corner */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -19,48 +21,52 @@
     }
   </style>
 
-  <!-- 2) Debug + setup script -->
+  <!-- 2) Our debug + auto-welcome script -->
   <script>
     console.log("🔍 Debug script loaded (head)");
 
-    // A) Grab & decode email
+    // A) Extract & decode the email query-param
     function parseEmail() {
-      const v = new URLSearchParams(location.search).get("email")||"";
-      try { return atob(v); } catch { return v; }
+      const raw = new URLSearchParams(location.search).get("email") || "";
+      try { return atob(raw); } catch { return raw; }
     }
     const userEmail = parseEmail();
     console.log("📧 Parsed email:", userEmail);
 
-    // B) Poll until df-messenger-chat exists, then configure
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts++;
+    // B) Poll until the df-messenger component has fully upgraded
+    let checks = 0;
+    const handle = setInterval(() => {
+      checks++;
       const host = document.querySelector("df-messenger");
       const chat = host?.shadowRoot?.querySelector("df-messenger-chat");
-      if (chat) {
-        clearInterval(timer);
-        console.log(`✅ Messenger ready after ${attempts} checks`);
 
-        // 1) Inject email as custom-data
+      if (chat) {
+        clearInterval(handle);
+        console.log(`✅ Messenger ready after ${checks} checks`);
+
+        // 1) Inject the email into custom-data
         if (userEmail) {
           host.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
           console.log("🔗 custom-data set →", { email: userEmail });
         }
 
-        // 2) Open the chat panel (this fires WELCOME)
+        // 2) Open the chat panel (this automatically fires WELCOME)
         chat.setAttribute("open", "");
-        console.log("🚀 Chat opened (WELCOME should fire)");
+        console.log("🚀 Chat opened (WELCOME event sent)");
 
-        // 3) Log every outgoing/incoming payload
+        // 3) Log every outgoing request
         host.addEventListener("df-request-sent", e =>
           console.log("▶️ df-request-sent:", e.detail.body)
         );
+        // 4) Log every incoming response
         host.addEventListener("df-response-received", e =>
           console.log("◀️ df-response-received:", e.detail.response)
         );
       }
-      if (attempts > 50) {
-        clearInterval(timer);
+
+      // After 50 tries (~5s), give up
+      if (checks > 50) {
+        clearInterval(handle);
         console.error("❌ Messenger never became ready");
       }
     }, 100);
@@ -68,7 +74,7 @@
 </head>
 
 <body>
-  <!-- 3) The widget -->
+  <!-- 3) This tag is where the widget goes -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
