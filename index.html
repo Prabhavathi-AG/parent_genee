@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>DF-Messenger Auto-Welcome</title>
+  <title>Parent Geenee Auto-Welcome</title>
 
-  <!-- 1) Load DF-Messenger CSS & JS -->
-  <link rel="stylesheet"
-        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
+  <!-- 1) Load the Dialogflow Messenger CSS & JS -->
+  <link 
+    rel="stylesheet" 
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    /* keep it pinned in the corner */
+    /* Pin the widget to the bottom-right */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -20,50 +22,49 @@
   </style>
 </head>
 <body>
-  <!-- 2) Placeholder for the widget -->
+
+  <!-- 2) Add `intent="WELCOME"` to fire the start-flow without any manual open() call -->
   <df-messenger
     id="df"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
-    language-code="en">
+    language-code="en"
+    intent="WELCOME">
   </df-messenger>
 
-  <!-- 3) Our setup script -->
   <script>
     console.log("🐣 Script loaded");
 
-    // A) Grab & decode the email query param
+    // A) Parse and Base64-decode the ?email query param
     const raw = new URLSearchParams(location.search).get("email") || "";
     let userEmail;
     try { userEmail = atob(raw); }
     catch { userEmail = raw; }
     console.log("📧 Parsed email:", userEmail);
 
-    // B) Wait for the custom element to be registered
-    customElements.whenDefined('df-messenger').then(() => {
-      console.log("✅ <df-messenger> is defined");
+    // B) Wait until the element class is registered
+    customElements.whenDefined("df-messenger").then(() => {
+      console.log("✅ <df-messenger> defined");
 
       const df = document.getElementById("df");
 
-      // 1) Hook up request/response logging
-      df.addEventListener("df-request-sent", e => {
-        console.log("▶️ df-request-sent:", e.detail);
-      });
-      df.addEventListener("df-response-received", e => {
-        console.log("◀️ df-response-received:", e.detail);
-      });
+      // 1) Wire up logging so we can see the payloads
+      df.addEventListener("df-request-sent", e =>
+        console.log("▶️ df-request-sent:", e.detail)
+      );
+      df.addEventListener("df-response-received", e =>
+        console.log("◀️ df-response-received:", e.detail)
+      );
 
-      // 2) Inject the email into custom-data
+      // 2) Inject your email into custom-data *before* the WELCOME intent fires
       if (userEmail) {
         df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
         console.log("🔗 custom-data set →", { email: userEmail });
       }
 
-      // 3) Open the chat (fires WELCOME under the hood)
-      //    This ensures your Start flow’s WELCOME route is triggered
-      df.openChat();
-      console.log("🚀 openChat() called (WELCOME sent)");
+      // No need to call openChat(); intent="WELCOME" does that for us.
     });
   </script>
+
 </body>
 </html>
