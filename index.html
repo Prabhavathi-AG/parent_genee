@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Parent Geenee Chat</title>
+  <title>Parent Geenee Chat Debug</title>
 
-  <!-- 1) DF Messenger CSS & JS -->
-  <link rel="stylesheet"
-        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
+  <!-- Dialogflow Messenger CSS & JS -->
+  <link
+    rel="stylesheet"
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    /* Make sure it’s visible by default */
+    /* ensure the widget shows up */
     df-messenger {
       position: fixed;
       bottom: 0;
@@ -18,23 +20,10 @@
       z-index: 999;
     }
   </style>
-
-  <!-- 2) Grab & decode ?email= -->
-  <script>
-    function getQueryParam(n){ return new URLSearchParams(location.search).get(n) }
-    let userEmail = getQueryParam("email");
-    if (userEmail) {
-      try {
-        userEmail = decodeURIComponent(atob(userEmail));
-      } catch {
-        console.log("Not Base64, using as-is");
-      }
-    }
-    console.log("Email →", userEmail);
-  </script>
 </head>
+
 <body>
-  <!-- 3) Bare messenger -->
+  <!-- 1) The bare chatbot -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
@@ -42,34 +31,20 @@
     language-code="en">
   </df-messenger>
 
-  <!-- 4) Wire up logging & custom-data after load -->
- <script>
-  // 4) Wire up logging & custom-data after load
-  document.addEventListener("df-messenger-loaded", () => {
-    console.log("✅ df-messenger-loaded fired!");
+  <!-- 2) Debug script -->
+  <script>
+    // Step 0: verify this script runs
+    console.log("🔍 Debug script loaded");
 
-    const df = document.querySelector("df-messenger");
-    if (!df) {
-      console.error("❌ <df-messenger> element not found");
-      return;
-    }
-
-    // A) Inject the email so it goes out on every request
-    if (userEmail) {
-      console.log("Setting custom-data =", { email: userEmail });
-      df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-    }
-
-    // B) Log every outgoing request
-    df.addEventListener("df-request-sent", evt => {
-      console.log("▶️ df-request-sent:", evt.detail.body);
+    // Step 1: listen for the DF messenger ready event
+    document.addEventListener("df-messenger-loaded", () => {
+      console.log("✅ df-messenger-loaded event fired");
     });
 
-    // C) Log every incoming response
-    df.addEventListener("df-response-received", evt => {
-      console.log("◀️ df-response-received:", evt.detail.response);
-    });
-  });
-</script>
+    // Step 2: fallback after 5s if no event
+    setTimeout(() => {
+      console.log("⌛️ 5s elapsed; did you see the df-messenger-loaded log above?");
+    }, 5000);
+  </script>
 </body>
 </html>
