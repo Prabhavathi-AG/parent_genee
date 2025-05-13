@@ -10,13 +10,12 @@
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    /* no display:none here! */
+    /* Make sure it’s visible by default */
     df-messenger {
       position: fixed;
       bottom: 0;
       right: 0;
       z-index: 999;
-      /* your other vars */
     }
   </style>
 
@@ -24,15 +23,18 @@
   <script>
     function getQueryParam(n){ return new URLSearchParams(location.search).get(n) }
     let userEmail = getQueryParam("email");
-    if(userEmail){
-      try{ userEmail = decodeURIComponent(atob(userEmail)); }
-      catch{ console.log("Not Base64, using as-is"); }
+    if (userEmail) {
+      try {
+        userEmail = decodeURIComponent(atob(userEmail));
+      } catch {
+        console.log("Not Base64, using as-is");
+      }
     }
     console.log("Email →", userEmail);
   </script>
 </head>
 <body>
-  <!-- 3) Just the bare messenger -->
+  <!-- 3) Bare messenger -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
@@ -40,29 +42,32 @@
     language-code="en">
   </df-messenger>
 
-  <!-- 4) Once the component is ready… -->
+  <!-- 4) Wire up logging & custom-data after load -->
   <script>
-    document.addEventListener("df-messenger-loaded", () => {
-      const df = document.querySelector("df-messenger");
-      // Log every outgoing request body
-      df.addEventListener("df-request-sent", evt => {
-        console.log("▶️ df-request-sent body:", evt.detail.body);
-      });
-      if (!df) return;
+    window.addEventListener("df-messenger-loaded", () => {
+      console.log("✅ df-messenger-loaded fired");
 
-      // a) Inject your email
+      const df = document.querySelector("df-messenger");
+      if (!df) {
+        console.error("❌ df-messenger element not found");
+        return;
+      }
+
+      // A) Inject the email so it goes out on every request
       if (userEmail) {
-        df.setAttribute("user-id", userEmail);
+        console.log("Setting custom-data=", { email: userEmail });
         df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
       }
 
-      // b) Auto-open
-      const chat = df.shadowRoot.querySelector("df-messenger-chat");
-      if (chat) chat.setAttribute("open", "");
+      // B) Log every outgoing request
+      df.addEventListener("df-request-sent", evt => {
+        console.log("▶️ df-request-sent:", evt.detail.body);
+      });
 
-      // c) Hide the little floating bubble icon
-      const bubble = df.shadowRoot.querySelector("df-messenger-chat-bubble");
-      if (bubble) bubble.style.display = "none";
+      // C) Log every incoming response
+      df.addEventListener("df-response-received", evt => {
+        console.log("◀️ df-response-received:", evt.detail.response);
+      });
     });
   </script>
 </body>
