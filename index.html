@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Parent Geenee Polling Debug</title>
+  <title>Parent Geenee Debug Chat</title>
+
+  <!-- 1) Load the DF Messenger library before the element appears -->
+  <link
+    rel="stylesheet"
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
+  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+
   <style>
+    /* Always show the widget */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -11,45 +20,29 @@
       z-index: 999 !important;
     }
   </style>
-  <!-- Load the Messenger library -->
-  <link
-    rel="stylesheet"
-    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
-  />
-  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
-</head>
-<body>
-  <df-messenger
-    id="chatbot"
-    project-id="parent-geenee-dev-445110"
-    agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
-    language-code="en">
-  </df-messenger>
 
+  <!-- 2) Debug + email‐parse code runs early -->
   <script>
-    console.log("🔍 Debug script loaded");
+    console.log("🔍 Debug script loaded (head)");
 
-    // Extract and decode email
+    // Parse and decode email once
     function parseEmail() {
-      const p = new URLSearchParams(location.search).get("email") || "";
-      try { return atob(p); } catch { return p; }
+      const raw = new URLSearchParams(location.search).get("email") || "";
+      try { return atob(raw); } catch { return raw; }
     }
     const userEmail = parseEmail();
     console.log("📧 Parsed email:", userEmail);
 
-    // Polling function to wait for the df-messenger to be fully in the DOM
-    let attempts = 0;
+    // Poll until <df-messenger> has a shadowRoot
+    let tries = 0;
     const poll = setInterval(() => {
-      attempts++;
+      tries++;
       const df = document.querySelector("df-messenger");
-      // The Chat component lives inside shadowRoot as <df-messenger-chat>
-      const chat = df?.shadowRoot?.querySelector("df-messenger-chat");
-
-      if (df && chat) {
+      if (df && df.shadowRoot) {
         clearInterval(poll);
-        console.log(`✅ Messenger ready after ${attempts} checks`);
+        console.log(`✅ df-messenger upgraded after ${tries} attempts`);
 
-        // Inject email into custom-data
+        // Inject email
         if (userEmail) {
           df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
           console.log("🔗 custom-data set →", { email: userEmail });
@@ -59,19 +52,26 @@
         df.addEventListener("df-request-sent", e =>
           console.log("▶️ df-request-sent:", e.detail.body)
         );
-
         // Log incoming responses
         df.addEventListener("df-response-received", e =>
           console.log("◀️ df-response-received:", e.detail.response)
         );
       }
-
-      // After 20 attempts (~2s), warn if still not ready
-      if (attempts > 20) {
+      if (tries > 50) {
         clearInterval(poll);
-        console.warn("⌛ Messenger still not ready after 20 checks");
+        console.warn("⌛ df-messenger never upgraded — shadowRoot still null");
       }
     }, 100);
   </script>
+</head>
+
+<body>
+  <!-- 3) Now place the messenger tag -->
+  <df-messenger
+    id="chatbot"
+    project-id="parent-geenee-dev-445110"
+    agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
+    language-code="en">
+  </df-messenger>
 </body>
 </html>
