@@ -43,32 +43,33 @@
   </df-messenger>
 
   <!-- 4) Wire up logging & custom-data after load -->
-  <script>
-    window.addEventListener("df-messenger-loaded", () => {
-      console.log("✅ df-messenger-loaded fired");
+ <script>
+  // 4) Wire up logging & custom-data after load
+  document.addEventListener("df-messenger-loaded", () => {
+    console.log("✅ df-messenger-loaded fired!");
 
-      const df = document.querySelector("df-messenger");
-      if (!df) {
-        console.error("❌ df-messenger element not found");
-        return;
-      }
+    const df = document.querySelector("df-messenger");
+    if (!df) {
+      console.error("❌ <df-messenger> element not found");
+      return;
+    }
 
-      // A) Inject the email so it goes out on every request
-      if (userEmail) {
-        console.log("Setting custom-data=", { email: userEmail });
-        df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-      }
+    // A) Inject the email so it goes out on every request
+    if (userEmail) {
+      console.log("Setting custom-data =", { email: userEmail });
+      df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
+    }
 
-      // B) Log every outgoing request
-      df.addEventListener("df-request-sent", evt => {
-        console.log("▶️ df-request-sent:", evt.detail.body);
-      });
-
-      // C) Log every incoming response
-      df.addEventListener("df-response-received", evt => {
-        console.log("◀️ df-response-received:", evt.detail.response);
-      });
+    // B) Log every outgoing request
+    df.addEventListener("df-request-sent", evt => {
+      console.log("▶️ df-request-sent:", evt.detail.body);
     });
-  </script>
+
+    // C) Log every incoming response
+    df.addEventListener("df-response-received", evt => {
+      console.log("◀️ df-response-received:", evt.detail.response);
+    });
+  });
+</script>
 </body>
 </html>
