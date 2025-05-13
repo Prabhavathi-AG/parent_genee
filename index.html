@@ -2,39 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Test DF-Messenger</title>
+  <title>DF-Messenger Auto-Welcome</title>
 
-  <!-- Load the messenger library -->
-  <link
-    rel="stylesheet"
-    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
-  />
+  <!-- 1) Load DF-Messenger CSS & JS -->
+  <link rel="stylesheet"
+        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+
+  <style>
+    /* keep it pinned in the corner */
+    df-messenger {
+      position: fixed !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      z-index: 999 !important;
+    }
+  </style>
 </head>
 <body>
-  <!-- Barebones widget -->
+  <!-- 2) Placeholder for the widget -->
   <df-messenger
-    id="bot"
+    id="df"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
     language-code="en">
   </df-messenger>
 
+  <!-- 3) Our setup script -->
   <script>
-    console.log("🐣 Test script running");
-    const bot = document.getElementById("bot");
-    console.log("Element found?", !!bot);
+    console.log("🐣 Script loaded");
 
-    bot.addEventListener("df-messenger-loaded", () => {
-      console.log("✅ df-messenger-loaded fired!");
-      console.log("Shadow root present?", !!bot.shadowRoot);
-      console.log("Chat element:", bot.shadowRoot.querySelector("df-messenger-chat"));
+    // A) Grab & decode the email query param
+    const raw = new URLSearchParams(location.search).get("email") || "";
+    let userEmail;
+    try { userEmail = atob(raw); }
+    catch { userEmail = raw; }
+    console.log("📧 Parsed email:", userEmail);
+
+    // B) Wait for the custom element to be registered
+    customElements.whenDefined('df-messenger').then(() => {
+      console.log("✅ <df-messenger> is defined");
+
+      const df = document.getElementById("df");
+
+      // 1) Hook up request/response logging
+      df.addEventListener("df-request-sent", e => {
+        console.log("▶️ df-request-sent:", e.detail);
+      });
+      df.addEventListener("df-response-received", e => {
+        console.log("◀️ df-response-received:", e.detail);
+      });
+
+      // 2) Inject the email into custom-data
+      if (userEmail) {
+        df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
+        console.log("🔗 custom-data set →", { email: userEmail });
+      }
+
+      // 3) Open the chat (fires WELCOME under the hood)
+      //    This ensures your Start flow’s WELCOME route is triggered
+      df.openChat();
+      console.log("🚀 openChat() called (WELCOME sent)");
     });
-
-    // Give it a few seconds
-    setTimeout(() => {
-      console.warn("⌛️ 5s passed, did you see the loaded event above?");
-    }, 5000);
   </script>
 </body>
 </html>
