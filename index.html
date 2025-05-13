@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Parent Geenee Debug Chat</title>
+  <title>Parent Geenee Polling Debug</title>
   <style>
-    /* Always show the widget */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -12,67 +11,67 @@
       z-index: 999 !important;
     }
   </style>
-
-  <!-- 1) Early debug listener: registers BEFORE df-messenger.js loads -->
-  <script>
-    console.log("🔍 Debug script loaded (before messenger.js)");
-
-    // Parse email now
-    function getQueryParam(n){ return new URLSearchParams(location.search).get(n); }
-    let userEmail = getQueryParam("email") || "";
-    try {
-      userEmail = atob(userEmail);
-      console.log("📧 Email decoded via Base64:", userEmail);
-    } catch {
-      console.log("📧 Email not Base64, using as-is:", userEmail);
-    }
-
-    // Set up our listener *early* so we don't miss it
-    document.addEventListener("df-messenger-loaded", () => {
-      console.log("✅ (early) df-messenger-loaded event caught");
-
-      const df = document.querySelector("df-messenger");
-      if (!df) {
-        console.error("❌ <df-messenger> not found");
-        return;
-      }
-
-      // Inject email
-      if (userEmail) {
-        df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-        console.log("🔗 custom-data set →", { email: userEmail });
-      }
-
-      // Log outgoing/incoming
-      df.addEventListener("df-request-sent", e =>
-        console.log("▶️ df-request-sent:", e.detail.body)
-      );
-      df.addEventListener("df-response-received", e =>
-        console.log("◀️ df-response-received:", e.detail.response)
-      );
-    });
-
-    // Fallback if we miss it
-    setTimeout(() => {
-      console.warn("⌛️ 5s elapsed; if you saw no 'df-messenger-loaded' above, we missed it.");
-    }, 5000);
-  </script>
-
-  <!-- 2) Now load the Dialogflow Messenger library -->
+  <!-- Load the Messenger library -->
   <link
     rel="stylesheet"
     href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
   />
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 </head>
-
 <body>
-  <!-- 3) The chat widget -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
     language-code="en">
   </df-messenger>
+
+  <script>
+    console.log("🔍 Debug script loaded");
+
+    // Extract and decode email
+    function parseEmail() {
+      const p = new URLSearchParams(location.search).get("email") || "";
+      try { return atob(p); } catch { return p; }
+    }
+    const userEmail = parseEmail();
+    console.log("📧 Parsed email:", userEmail);
+
+    // Polling function to wait for the df-messenger to be fully in the DOM
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      const df = document.querySelector("df-messenger");
+      // The Chat component lives inside shadowRoot as <df-messenger-chat>
+      const chat = df?.shadowRoot?.querySelector("df-messenger-chat");
+
+      if (df && chat) {
+        clearInterval(poll);
+        console.log(`✅ Messenger ready after ${attempts} checks`);
+
+        // Inject email into custom-data
+        if (userEmail) {
+          df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
+          console.log("🔗 custom-data set →", { email: userEmail });
+        }
+
+        // Log outgoing requests
+        df.addEventListener("df-request-sent", e =>
+          console.log("▶️ df-request-sent:", e.detail.body)
+        );
+
+        // Log incoming responses
+        df.addEventListener("df-response-received", e =>
+          console.log("◀️ df-response-received:", e.detail.response)
+        );
+      }
+
+      // After 20 attempts (~2s), warn if still not ready
+      if (attempts > 20) {
+        clearInterval(poll);
+        console.warn("⌛ Messenger still not ready after 20 checks");
+      }
+    }, 100);
+  </script>
 </body>
 </html>
