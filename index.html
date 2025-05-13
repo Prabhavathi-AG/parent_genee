@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8"/>
   <title>Parent Geenee Debug Chat</title>
-
-  <!-- 1) Dialogflow Messenger CSS -->
-  <link
-    rel="stylesheet"
-    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
-  />
   <style>
-    /* Always show the widget in the corner */
+    /* Always show the widget */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -18,27 +12,13 @@
       z-index: 999 !important;
     }
   </style>
-</head>
-<body>
-  <!-- 2) The chatbot widget -->
-  <df-messenger
-    id="chatbot"
-    project-id="parent-geenee-dev-445110"
-    agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
-    language-code="en">
-  </df-messenger>
 
-  <!-- 3) Load the DF messenger script -->
-  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
-
-  <!-- 4) Debug & email‐injection logic -->
+  <!-- 1) Early debug listener: registers BEFORE df-messenger.js loads -->
   <script>
-    console.log("🔍 Debug script loaded");
+    console.log("🔍 Debug script loaded (before messenger.js)");
 
-    // 4a) Parse email from ?email=, Base64‐decode if needed
-    function getQueryParam(n) {
-      return new URLSearchParams(location.search).get(n);
-    }
+    // Parse email now
+    function getQueryParam(n){ return new URLSearchParams(location.search).get(n); }
     let userEmail = getQueryParam("email") || "";
     try {
       userEmail = atob(userEmail);
@@ -47,42 +27,52 @@
       console.log("📧 Email not Base64, using as-is:", userEmail);
     }
 
-    // 4b) When the <df-messenger> is in DOM with a shadowRoot, call this:
-    function onMessengerReady(df) {
-      console.log("✅ df-messenger detected and ready");
+    // Set up our listener *early* so we don't miss it
+    document.addEventListener("df-messenger-loaded", () => {
+      console.log("✅ (early) df-messenger-loaded event caught");
 
-      // Inject the email into custom-data
+      const df = document.querySelector("df-messenger");
+      if (!df) {
+        console.error("❌ <df-messenger> not found");
+        return;
+      }
+
+      // Inject email
       if (userEmail) {
         df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
         console.log("🔗 custom-data set →", { email: userEmail });
       }
 
-      // Log outgoing requests
-      df.addEventListener("df-request-sent", evt => {
-        console.log("▶️ df-request-sent:", evt.detail.body);
-      });
+      // Log outgoing/incoming
+      df.addEventListener("df-request-sent", e =>
+        console.log("▶️ df-request-sent:", e.detail.body)
+      );
+      df.addEventListener("df-response-received", e =>
+        console.log("◀️ df-response-received:", e.detail.response)
+      );
+    });
 
-      // Log incoming responses
-      df.addEventListener("df-response-received", evt => {
-        console.log("◀️ df-response-received:", evt.detail.response);
-      });
-    }
-
-    // 4c) Poll until the messenger element+shadowRoot exist
-    const checkInterval = setInterval(() => {
-      const df = document.querySelector("df-messenger");
-      if (df && df.shadowRoot) {
-        clearInterval(checkInterval);
-        onMessengerReady(df);
-      }
-    }, 100);
-
-    // Fallback log if it never appears
+    // Fallback if we miss it
     setTimeout(() => {
-      if (checkInterval) {
-        console.warn("⌛️ Chat widget still not ready after 5s");
-      }
+      console.warn("⌛️ 5s elapsed; if you saw no 'df-messenger-loaded' above, we missed it.");
     }, 5000);
   </script>
+
+  <!-- 2) Now load the Dialogflow Messenger library -->
+  <link
+    rel="stylesheet"
+    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
+  />
+  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+</head>
+
+<body>
+  <!-- 3) The chat widget -->
+  <df-messenger
+    id="chatbot"
+    project-id="parent-geenee-dev-445110"
+    agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
+    language-code="en">
+  </df-messenger>
 </body>
 </html>
