@@ -1,147 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Chat with Parent Geenee</title>
-  <link rel="icon" href="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png">
+  <meta charset="utf-8">
+  <title>Parent Geenee Chat</title>
+
+  <!-- 1) DF Messenger CSS & JS -->
+  <link rel="stylesheet"
+        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"/>
+  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #0a3195d2;
-    }
+    /* no display:none here! */
     df-messenger {
       position: fixed;
+      bottom: 0;
+      right: 0;
       z-index: 999;
-      background-color: #a854ccc2;
-      display: none; /* initially hidden */
-      --df-messenger-chat-background: #d080e8dd;
-      --df-messenger-input-padding: 8px;
-    }
-    @media (max-width: 991px) {
-      df-messenger {
-        --df-messenger-send-icon-offset-x: -12px;
-        --df-messenger-input-inner-padding: 0px 64px 0px 0px;
-        --df-messenger-input-padding: 12px 16px;
-      }
+      /* your other vars */
     }
   </style>
 
-  <!-- 1. Dialogflow Messenger CSS & JS -->
-  <link
-    rel="stylesheet"
-    href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
-  />
-  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
-
-  <!-- 2. Google API loader (for gapi) -->
-  <script src="https://apis.google.com/js/api.js"></script>
-
-  <!-- 3. Extract & decode the email parameter -->
+  <!-- 2) Grab & decode ?email= -->
   <script>
-    function getQueryParam(name) {
-      return new URLSearchParams(window.location.search).get(name);
-    }
+    function getQueryParam(n){ return new URLSearchParams(location.search).get(n) }
     let userEmail = getQueryParam("email");
-    if (userEmail) {
-      try {
-        userEmail = decodeURIComponent(atob(userEmail));
-      } catch {
-        console.log("Email not Base64, using as-is");
-      }
+    if(userEmail){
+      try{ userEmail = decodeURIComponent(atob(userEmail)); }
+      catch{ console.log("Not Base64, using as-is"); }
     }
-    console.log("Extracted User Email:", userEmail);
+    console.log("Email →", userEmail);
   </script>
 </head>
-
 <body>
-  <!-- 4. The chatbot widget (hidden until JS shows it) -->
+  <!-- 3) Just the bare messenger -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
-    language-code="en"
-    max-query-length="-1"
-    allow-feedback="all">
-    <df-messenger-chat-bubble
-      chat-title="Parent Geenee"
-      background-color="#74992e"
-      bot-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot-agent.png"
-      user-actor-image="https://storage.googleapis.com/ui-images-pg/chatbot_user.png"
-      chat-title-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
-      chat-icon="https://storage.googleapis.com/ui-images-pg/parent_genee_logo1.png"
-      allow-fullscreen="always">
-    </df-messenger-chat-bubble>
+    language-code="en">
   </df-messenger>
 
-  <!-- 5. All dynamic behavior inside the correct event -->
+  <!-- 4) Once the component is ready… -->
   <script>
-    window.addEventListener("df-messenger-loaded", () => {
+    document.addEventListener("df-messenger-loaded", () => {
       const df = document.querySelector("df-messenger");
       if (!df) return;
 
-      // a) Show the widget
-      df.style.display = "block";
-
-      // b) Pass the email as custom-data (and user-id)
+      // a) Inject your email
       if (userEmail) {
         df.setAttribute("user-id", userEmail);
         df.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
       }
 
-      // c) Open the chat panel
-      const chat = df.shadowRoot?.querySelector("df-messenger-chat");
+      // b) Auto-open
+      const chat = df.shadowRoot.querySelector("df-messenger-chat");
       if (chat) chat.setAttribute("open", "");
 
-      // d) Hide the floating bubble icon
-      const bubble = df.shadowRoot?.querySelector("df-messenger-chat-bubble");
+      // c) Hide the little floating bubble icon
+      const bubble = df.shadowRoot.querySelector("df-messenger-chat-bubble");
       if (bubble) bubble.style.display = "none";
-
-      // e) Initialize Google API client for sentiment
-      function initClient() {
-        gapi.client.init({
-          apiKey: "AIzaSyANFDksC_jLSqbQOrCpvA_gTeTDB9V4Yq0",
-          discoveryDocs: [
-            "https://language.googleapis.com/$discovery/rest?version=v1"
-          ]
-        }).then(
-          () => console.log("gapi client initialized"),
-          err => console.error("gapi init error", err)
-        );
-      }
-      gapi.load("client", initClient);
-
-      // f) Modify bot responses based on sentiment
-      df.addEventListener("df-response-received", async evt => {
-        const detail = evt.detail?.response;
-        if (!detail?.queryResult) return;
-
-        const userText = detail.queryResult.queryText;
-        const original = detail.queryResult.fulfillmentText;
-        let reply = original;
-
-        try {
-          const resp = await gapi.client.language.documents.analyzeSentiment({
-            document: { content: userText, type: "PLAIN_TEXT" }
-          });
-          const score = resp.result.documentSentiment.score;
-          if (score < -0.5) {
-            reply = `I'm sorry you're feeling frustrated. ${original}`;
-          } else if (score > 0.5) {
-            reply = `Great! ${original}`;
-          }
-        } catch (e) {
-          console.error("Sentiment API error", e);
-        }
-
-        df.renderCustomText(reply);
-      });
     });
   </script>
 </body>
