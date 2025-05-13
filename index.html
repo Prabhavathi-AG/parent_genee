@@ -44,6 +44,10 @@
   <script>
     document.addEventListener("df-messenger-loaded", () => {
       const df = document.querySelector("df-messenger");
+      // Log every outgoing request body
+      df.addEventListener("df-request-sent", evt => {
+        console.log("▶️ df-request-sent body:", evt.detail.body);
+      });
       if (!df) return;
 
       // a) Inject your email
