@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>Parent Geenee Auto-Welcome</title>
 
-  <!-- 1) Load the Dialogflow Messenger CSS & JS BEFORE the element -->
+  <!-- 1) Load the Dialogflow Messenger CSS & JS -->
   <link
     rel="stylesheet"
     href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css"
@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
   <style>
-    /* Always keep the widget visible in the corner */
+    /* Keep the widget in the bottom right */
     df-messenger {
       position: fixed !important;
       bottom: 0 !important;
@@ -20,66 +20,65 @@
       z-index: 999 !important;
     }
   </style>
-
-  <!-- 2) Our debug + auto-welcome script -->
-  <script>
-    console.log("🔍 Debug script loaded (head)");
-
-    // A) Extract & decode the email query-param
-    function parseEmail() {
-      const raw = new URLSearchParams(location.search).get("email") || "";
-      try { return atob(raw); } catch { return raw; }
-    }
-    const userEmail = parseEmail();
-    console.log("📧 Parsed email:", userEmail);
-
-    // B) Poll until the df-messenger component has fully upgraded
-    let checks = 0;
-    const handle = setInterval(() => {
-      checks++;
-      const host = document.querySelector("df-messenger");
-      const chat = host?.shadowRoot?.querySelector("df-messenger-chat");
-
-      if (chat) {
-        clearInterval(handle);
-        console.log(`✅ Messenger ready after ${checks} checks`);
-
-        // 1) Inject the email into custom-data
-        if (userEmail) {
-          host.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
-          console.log("🔗 custom-data set →", { email: userEmail });
-        }
-
-        // 2) Open the chat panel (this automatically fires WELCOME)
-        chat.setAttribute("open", "");
-        console.log("🚀 Chat opened (WELCOME event sent)");
-
-        // 3) Log every outgoing request
-        host.addEventListener("df-request-sent", e =>
-          console.log("▶️ df-request-sent:", e.detail.body)
-        );
-        // 4) Log every incoming response
-        host.addEventListener("df-response-received", e =>
-          console.log("◀️ df-response-received:", e.detail.response)
-        );
-      }
-
-      // After 50 tries (~5s), give up
-      if (checks > 50) {
-        clearInterval(handle);
-        console.error("❌ Messenger never became ready");
-      }
-    }, 100);
-  </script>
 </head>
 
 <body>
-  <!-- 3) This tag is where the widget goes -->
+  <!-- 2) The widget placeholder -->
   <df-messenger
     id="chatbot"
     project-id="parent-geenee-dev-445110"
     agent-id="c6b2330d-fb94-4a93-9b2d-c5716ad2de36"
     language-code="en">
   </df-messenger>
+
+  <!-- 3) Setup script runs after everything is loaded -->
+  <script>
+    window.onload = () => {
+      console.log("🔍 Setup running on window.onload");
+
+      // A) Grab & decode ?email=
+      const params = new URLSearchParams(location.search);
+      let userEmail = params.get("email") || "";
+      try { userEmail = atob(userEmail); }
+      catch { /* not base64 */ }
+      console.log("📧 Parsed email:", userEmail);
+
+      // B) Poll for the messenger element + its shadowRoot
+      let attempts = 0;
+      const iv = setInterval(() => {
+        const host = document.querySelector("df-messenger");
+        const chat = host?.shadowRoot?.querySelector("df-messenger-chat");
+        attempts++;
+
+        if (chat) {
+          clearInterval(iv);
+          console.log(`✅ Messenger ready after ${attempts} checks`);
+
+          // 1) Inject custom-data
+          if (userEmail) {
+            host.setAttribute("custom-data", JSON.stringify({ email: userEmail }));
+            console.log("🔗 custom-data set →", { email: userEmail });
+          }
+
+          // 2) Open the chat (fires WELCOME)
+          chat.setAttribute("open", "");
+          console.log("🚀 Chat opened (WELCOME sent)");
+
+          // 3) Log outgoing & incoming
+          host.addEventListener("df-request-sent", ev => {
+            console.log("▶️ df-request-sent:", ev.detail.body);
+          });
+          host.addEventListener("df-response-received", ev => {
+            console.log("◀️ df-response-received:", ev.detail.response);
+          });
+        }
+
+        if (attempts > 50) {
+          clearInterval(iv);
+          console.error("❌ Messenger never became ready");
+        }
+      }, 100);
+    };
+  </script>
 </body>
 </html>
